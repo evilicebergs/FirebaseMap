@@ -13,6 +13,26 @@ final class SettingsViewModel: ObservableObject {
     func logOut() throws {
         try AuthenticationManager.shared.signOut()
     }
+    
+    func resetPassword() async throws {
+        let tempUser = try AuthenticationManager.shared.getAuthenticatedUser()
+        
+        guard let email = tempUser.email else {
+            print("Can't Find User Email: \(URLError(.fileDoesNotExist))")
+            return
+        }
+        try await AuthenticationManager.shared.resetPassword(email: email)
+    }
+    
+    func updateEmail() async throws {
+        let email = "hello123@gmail.com"
+        try await AuthenticationManager.shared.updateEmail(email: email)
+    }
+    
+    func updatePassword() async throws {
+        let password = "hello123"
+        try await AuthenticationManager.shared.updatePassword(password: password)
+    }
 }
 
 struct SettingsView: View {
@@ -33,6 +53,8 @@ struct SettingsView: View {
             } label: {
                 Text("Log Out")
             }
+            
+            emailSection
         }
         .navigationTitle("Settings")
     }
@@ -41,5 +63,50 @@ struct SettingsView: View {
 #Preview {
     NavigationStack {
         SettingsView(showSignInView: .constant(false))
+    }
+}
+
+extension SettingsView {
+    private var emailSection: some View {
+        Section {
+            Button {
+                Task {
+                    do {
+                        try await vm.resetPassword()
+                        print("Password Reset!")
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Reset Password")
+            }
+            
+            Button {
+                Task {
+                    do {
+                        try await vm.updatePassword()
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Update Password")
+            }
+            
+            Button {
+                Task {
+                    do {
+                        try await vm.updateEmail()
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Update Email")
+            }
+        } header: {
+            Text("Email Functions")
+        }
     }
 }
