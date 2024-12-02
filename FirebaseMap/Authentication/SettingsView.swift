@@ -10,6 +10,14 @@ import SwiftUI
 @MainActor
 final class SettingsViewModel: ObservableObject {
     
+    @Published var authProviders: [AuthProviderOption] = []
+    
+    func loadAuthProviders() {
+        if let providers = try? AuthenticationManager.shared.getProviders() {
+            authProviders = providers
+        }
+    }
+    
     func logOut() throws {
         try AuthenticationManager.shared.signOut()
     }
@@ -53,9 +61,13 @@ struct SettingsView: View {
             } label: {
                 Text("Log Out")
             }
-            
-            emailSection
+            if vm.authProviders.contains(.email) {
+                emailSection
+            }
         }
+        .onAppear(perform: {
+            vm.loadAuthProviders()
+        })
         .navigationTitle("Settings")
     }
 }
