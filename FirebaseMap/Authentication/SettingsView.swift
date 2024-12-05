@@ -69,6 +69,10 @@ final class SettingsViewModel: ObservableObject {
         authUser = try await AuthenticationManager.shared.linkEmail(email: email, password: password)
     }
     
+    func deleteUserAccount() async throws {
+        try await AuthenticationManager.shared.deleteAccount()
+    }
+    
 }
 
 struct SettingsView: View {
@@ -89,6 +93,20 @@ struct SettingsView: View {
             } label: {
                 Text("Log Out")
             }
+            
+            Button(role: .destructive, action: {
+                Task {
+                    do {
+                        try await vm.deleteUserAccount()
+                        showSignInView = true
+                    } catch {
+                        print(error)
+                    }
+                }
+            }, label: {
+                Text("Delete Account")
+            })
+            
             if vm.authProviders.contains(.email) {
                 emailSection
             }
@@ -205,3 +223,5 @@ extension SettingsView {
         }
     }
 }
+
+//add an alert to LOG OUT and DELETE ACCOUNT buttons, also add reauthentication
