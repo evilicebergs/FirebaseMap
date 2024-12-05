@@ -12,8 +12,6 @@ import GoogleSignInSwift
 @MainActor
 final class AuthenticationViewModel: ObservableObject {
     
-    let appleHelper = SignInAppleHelper()
-    
     func signInGoogle() async throws {
         let helper = SignInGoogleHelper()
         let tokens = try await helper.signIn()
@@ -25,9 +23,15 @@ final class AuthenticationViewModel: ObservableObject {
         let tokens = try await helper.startSignInWithAppleFlow()
         try await AuthenticationManager.shared.signInWithApple(tokens: tokens)
     }
+    
+    func signInAnonymous() async throws {
+        try await AuthenticationManager.shared.signInAnonymous()
+    }
 }
 
 struct AuthenticationView: View {
+    
+    @Environment(\.colorScheme) private var colorScheme
     
     @StateObject private var vm = AuthenticationViewModel()
     @Binding var showSignInView: Bool
@@ -43,8 +47,27 @@ struct AuthenticationView: View {
                     .frame(height: 55)
                     .frame(maxWidth: .infinity)
                     .background(.blue)
-                    .clipShape(.rect(cornerRadius: 15))
+                    .clipShape(.rect(cornerRadius: 10))
             }
+            
+            Button(action: {
+                Task {
+                    do {
+                        try await vm.signInAnonymous()
+                        showSignInView = false
+                    } catch {
+                        print(error)
+                    }
+                }
+            }, label: {
+                Text("Sign In Anonymously")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(height: 55)
+                    .frame(maxWidth: .infinity)
+                    .background(.orange)
+                    .clipShape(.rect(cornerRadius: 10))
+            })
             
             GoogleSignInButton(viewModel: GoogleSignInButtonViewModel(scheme: .dark, style: .wide, state: .normal)) {
                 Task {
@@ -67,7 +90,7 @@ struct AuthenticationView: View {
                     }
                 }
             }, label: {
-                SignInWithAppleButtonViewRepresentable(type: .default, style: .black)
+                SignInWithAppleButtonViewRepresentable(type: .default, style: colorScheme == .dark ? .white : .black)
                     .allowsHitTesting(false)
             })
             .frame(height: 55)

@@ -11,11 +11,17 @@ import SwiftUI
 final class SettingsViewModel: ObservableObject {
     
     @Published var authProviders: [AuthProviderOption] = []
+    @Published var authUser: AuthDataResultModel? = nil
+    
+    func loadAuthUser() {
+        self.authUser = try? AuthenticationManager.shared.getAuthenticatedUser()
+    }
     
     func loadAuthProviders() {
         if let providers = try? AuthenticationManager.shared.getProviders() {
             authProviders = providers
         }
+        print(authProviders)
     }
     
     func logOut() throws {
@@ -41,6 +47,28 @@ final class SettingsViewModel: ObservableObject {
         let password = "hello123"
         try await AuthenticationManager.shared.updatePassword(password: password)
     }
+    
+    func linkGoogleAccount() async throws {
+        let helper = SignInGoogleHelper()
+        let tokens = try await helper.signIn()
+        
+        authUser = try await AuthenticationManager.shared.linkGoogle(tokens: tokens)
+    }
+    
+    func linkAppleAccount() async throws {
+        let helper = SignInAppleHelper()
+        let tokens = try await helper.startSignInWithAppleFlow()
+        
+        authUser = try await AuthenticationManager.shared.linkApple(token: tokens)
+    }
+    
+    func linkEmailAccount() async throws {
+        let email = "helloqw@gmail.com"
+        let password = "Hello123"
+        
+        authUser = try await AuthenticationManager.shared.linkEmail(email: email, password: password)
+    }
+    
 }
 
 struct SettingsView: View {
@@ -64,9 +92,14 @@ struct SettingsView: View {
             if vm.authProviders.contains(.email) {
                 emailSection
             }
+            
+            if vm.authUser?.isAnonymous == true {
+                anonymousSection
+            }
         }
         .onAppear(perform: {
             vm.loadAuthProviders()
+            vm.loadAuthUser()
         })
         .navigationTitle("Settings")
     }
@@ -119,6 +152,56 @@ extension SettingsView {
             }
         } header: {
             Text("Email Functions")
+        }
+    }
+}
+
+extension SettingsView {
+    private var anonymousSection: some View {
+        Section {
+            
+            Button {
+                Task {
+                    do {
+                        try await vm.linkGoogleAccount()
+                        print("google linked")
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Link Google Account")
+            }
+            
+            Button {
+                Task {
+                    do {
+                        try await vm.linkAppleAccount()
+                        print("apple linked")
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Link Apple Account")
+            }
+            
+            Button {
+                Task {
+                    do {
+                        try await vm.linkEmailAccount()
+                        print("email linked")
+                    } catch {
+                        print(error)
+                    }
+                }
+            } label: {
+                Text("Link Email Account")
+            }
+
+            
+        } header: {
+            Text("Create Account")
         }
     }
 }
