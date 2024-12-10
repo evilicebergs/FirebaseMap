@@ -17,13 +17,11 @@ final class ProfileViewModel: ObservableObject {
         self.user = try await UserManager.shared.getUser(userId: authDataResult.uid)
     }
     
-    func togglePremiumStatus() {
-        guard var user else { return }
-        user.togglePremiumStatus()
-        Task {
-            try UserManager.shared.updateUserPremiumStatus(user: user)
-            self.user = try await UserManager.shared.getUser(userId: user.userId)
-        }
+    func togglePremiumStatus() async {
+        guard let user else { return }
+        let currentValue = user.isPremium ?? false
+        try? await UserManager.shared.updateUserPremiumStatus(isPremium: !currentValue, userId: user.userId)
+        self.user = try? await UserManager.shared.getUser(userId: user.userId)
     }
     
 }
@@ -43,7 +41,9 @@ struct ProfileView: View {
                 }
                 
                 Button {
-                    vm.togglePremiumStatus()
+                    Task {
+                        await vm.togglePremiumStatus()
+                    }
                 } label: {
                     Text("User is premium: \((user.isPremium ?? false).description.capitalized)")
                 }
