@@ -17,19 +17,59 @@ final class ProfileViewModel: ObservableObject {
         self.user = try await UserManager.shared.getUser(userId: authDataResult.uid)
     }
     
-    func togglePremiumStatus() async {
+    func togglePremiumStatus() {
         guard let user else { return }
         let currentValue = user.isPremium ?? false
-        try? await UserManager.shared.updateUserPremiumStatus(isPremium: !currentValue, userId: user.userId)
-        self.user = try? await UserManager.shared.getUser(userId: user.userId)
+        Task {
+            try await UserManager.shared.updateUserPremiumStatus(isPremium: !currentValue, userId: user.userId)
+            self.user = try await UserManager.shared.getUser(userId: user.userId)
+        }
     }
     
+    func removeUserPreference(text: String) {
+        guard let user else { return }
+        Task {
+            try await UserManager.shared.removeUserPreference(userId: user.userId, preference: text)
+            self.user = try await UserManager.shared.getUser(userId: user.userId)
+        }
+    }
+    
+    func addUserPreference(text: String) {
+        guard let user else { return }
+        Task {
+            try await UserManager.shared.addUserPreference(userId: user.userId, preference: text)
+            self.user = try await UserManager.shared.getUser(userId: user.userId)
+        }
+    }
+    
+    func addFavouriteMovie() {
+        guard let user else { return }
+        let movie = Movie(id: "1", title: "Avatar 2", isPopular: true)
+        Task {
+            try await UserManager.shared.addFavouriteMovie(userId: user.userId, movie: movie)
+            self.user = try await UserManager.shared.getUser(userId: user.userId)
+        }
+    }
+    
+    func removeFavouriteMovie() {
+        guard let user else { return }
+        Task {
+            try await UserManager.shared.removeFavouriteMovie(userId: user.userId)
+            self.user = try await UserManager.shared.getUser(userId: user.userId)
+        }
+    }
 }
 
 struct ProfileView: View {
     
     @StateObject private var vm = ProfileViewModel()
     @Binding var showSignInView: Bool
+    
+    let preferenceOptions: [String] = ["Sports", "Movies", "Books"]
+    
+    private func preferenceIsSelected(option: String) -> Bool {
+        vm.user?.preferences?.contains(option) == true
+    }
     
     var body: some View {
         List {
@@ -41,14 +81,43 @@ struct ProfileView: View {
                 }
                 
                 Button {
-                    Task {
-                        await vm.togglePremiumStatus()
-                    }
+                        vm.togglePremiumStatus()
                 } label: {
                     Text("User is premium: \((user.isPremium ?? false).description.capitalized)")
                 }
-
+                VStack {
+                    HStack {
+                        ForEach(preferenceOptions, id: \.self) { option in
+                            Button {
+                                if preferenceIsSelected(option: option) {
+                                    vm.removeUserPreference(text: option)
+                                } else {
+                                    vm.addUserPreference(text: option)
+                                }
+                            } label: {
+                                Text(option)
+                            }
+                            .font(.headline)
+                            .buttonStyle(.borderedProminent)
+                            .tint(preferenceIsSelected(option: option) ? .green : .red)
+                        }
+                    }
+                    
+                    Text("User Preferences: \((user.preferences ?? []).joined(separator: ", "))")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 
+                Button {
+                    if user.favouriteMovie == nil {
+                        vm.addFavouriteMovie()
+                    } else {
+                        vm.removeFavouriteMovie()
+                    }
+                } label: {
+                    Text("Favourite Movie: \(user.favouriteMovie?.title ?? "")")
+                }
+
+
             }
         }
         .onAppear {
@@ -72,7 +141,8 @@ struct ProfileView: View {
 }
 
 #Preview {
-    NavigationStack {
-        ProfileView(showSignInView: .constant(false))
-    }
+    //NavigationStack {
+    RootView()
+        //ProfileView(showSignInView: .constant(false))
+    //}
 }

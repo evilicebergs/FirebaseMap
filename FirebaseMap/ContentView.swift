@@ -22,3 +22,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+
+//add an alert to LOG OUT and DELETE ACCOUNT buttons, also add reauthentication
+//fix a bug with dissapearing premium status while logging into account

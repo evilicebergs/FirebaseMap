@@ -156,4 +156,3 @@ extension SettingsView {
     }
 }
 
-//add an alert to LOG OUT and DELETE ACCOUNT buttons, also add reauthentication
