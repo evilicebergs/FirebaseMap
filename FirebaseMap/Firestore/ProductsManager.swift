@@ -27,12 +27,38 @@ final class ProductsManager {
         try await productDocument(productid: productId).getDocument(as: Product.self)
     }
     
-    func getAllProducts() async throws -> [Product] {
+    private func getAllProducts() async throws -> [Product] {
         try await productsCollection.getDocuments(as: Product.self)
     }
     
+    private func getAllProductsSortedByPrice(descending: Bool) async throws -> [Product] {
+        return try await productsCollection.order(by: Product.CodingKeys.price.rawValue, descending: descending).getDocuments(as: Product.self)
+    }
+    
+    private func getAllProductsForCategory(category: String) async throws -> [Product] {
+        return try await productsCollection.whereField(Product.CodingKeys.category.rawValue, isEqualTo: category).getDocuments(as: Product.self)
+    }
+    
+    private func getAllProductsByPriceAndCategory(descending: Bool, category: String) async throws -> [Product] {
+        return try await productsCollection
+            .whereField(Product.CodingKeys.category.rawValue, isEqualTo: category)
+            .order(by: Product.CodingKeys.price.rawValue, descending: descending)
+            .getDocuments(as: Product.self)
+    }
+    
+    func getAllProducts(descending: Bool?, category: String?) async throws -> [Product] {
+        if let category, let descending {
+            return try await getAllProductsByPriceAndCategory(descending: descending, category: category)
+        } else if let descending {
+            return try await getAllProductsSortedByPrice(descending: descending)
+        } else if let category {
+            return try await getAllProductsForCategory(category: category)
+        } else {
+            return try await getAllProducts()
+        }
+    }
+    
 }
-
 
 extension Query {
     
