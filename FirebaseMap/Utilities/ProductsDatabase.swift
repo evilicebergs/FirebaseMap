@@ -12,7 +12,7 @@ struct ProductArray: Codable {
     let total, skip, limit: Int
 }
 
-struct Product: Identifiable, Codable {
+struct Product: Identifiable, Codable, Equatable {
     let id: Int
     let title: String?
     let description: String?

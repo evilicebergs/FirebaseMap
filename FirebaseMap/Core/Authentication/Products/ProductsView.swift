@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 @MainActor
 final class ProductsViewModel: ObservableObject {
@@ -15,9 +16,7 @@ final class ProductsViewModel: ObservableObject {
     @Published var selectedFilter: FilterOption = .noFilter
     @Published var selectedCategory: CategoryOption? = nil
     
-//    func getAllProducts() async throws {
-//        products = try await ProductsManager.shared.getAllProducts()
-//    }
+    private var lastDocument: DocumentSnapshot? = nil
     
     enum FilterOption: String, CaseIterable {
         case noFilter = "None"
@@ -45,42 +44,55 @@ final class ProductsViewModel: ObservableObject {
     }
     
     func categorySelected(option: CategoryOption) async throws {
-//        switch option {
-//        case .beauty, .forniture, .fragrances, .groceries:
-//            products = try await ProductsManager.shared.getAllProductsForCategory(category: option.rawValue)
-//        case .noSorting:
-//            products = try await ProductsManager.shared.getAllProducts()
-//        }
-        
         if option != .noSorting {
             self.selectedCategory = option
         } else {
             self.selectedCategory = nil
         }
         
+        self.products = []
+        
+        self.lastDocument = nil
+        
         self.getProducts()
     }
     
     func getProducts() {
         Task {
-            self.products = try await ProductsManager.shared.getAllProducts(descending: selectedFilter.priceDescending, category: selectedCategory?.rawValue)
+            let (newProducts, newDocument) = try await ProductsManager.shared.getAllProducts(descending: selectedFilter.priceDescending, category: selectedCategory?.rawValue, count: 10, lastDocument: lastDocument)
+            if let newDocument {
+                self.lastDocument = newDocument
+            }
+            self.products.append(contentsOf: newProducts)
         }
     }
     
     func filterSelected(option: FilterOption) async throws {
-//        switch option {
-//        case .priceHigh:
-//            products = try await ProductsManager.shared.
-//            ge
-//        case .proceLow:
-//            products = try await ProductsManager.shared.getAllProductsSortedByPrice(descending: false)
-//        case .noFilter:
-//            products = try await ProductsManager.shared.getAllProducts()
-//        }
-        
         self.selectedFilter = option
+        
+        self.products = []
+        self.lastDocument = nil
+        
         self.getProducts()
     }
+    
+//    func getProductsCount() {
+//        Task {
+//            let count = try await ProductsManager.shared.getAllProductCount()
+//            print(count)
+//        }
+//    }
+    
+//    func getProductsByRating() {
+//        Task {
+////            let newArr = try await ProductsManager.shared.getProductsByRating(limit: 3, lastRating: self.products.last?.rating)
+//            
+//            let (newArr, document) = try await  ProductsManager.shared.getProductsByRating(limit: 3, last: lastDocument)
+//            
+//            self.lastDocument = document
+//            self.products.append(contentsOf: newArr)
+//        }
+//    }
 
 }
 
@@ -89,10 +101,19 @@ struct ProductsView: View {
     @StateObject private var vm = ProductsViewModel()
     
     var body: some View {
-        ZStack {
-            List {
-                ForEach(vm.products) { product in
-                    ProductsCellView(product: product)
+        List {
+            ForEach(vm.products) { product in
+                ProductsCellView(product: product)
+                
+                if product == vm.products.last {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .onAppear {
+                        vm.getProducts()
+                    }
                 }
             }
         }
@@ -123,6 +144,7 @@ struct ProductsView: View {
         .navigationTitle("Products")
         .onAppear {
             vm.getProducts()
+            //vm.getProductsCount()
         }
         
     }
