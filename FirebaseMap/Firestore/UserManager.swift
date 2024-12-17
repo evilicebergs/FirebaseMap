@@ -15,6 +15,18 @@ struct Movie: Codable {
     let isPopular: Bool
 }
 
+struct FavouriteItem: Codable {
+    let id: String
+    let dateCreated: Date
+    let productId: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case dateCreated = "date_created"
+        case productId = "product_id"
+    }
+}
+
 struct DBUser: Codable {
     let userId: String
     let isAnonymous: Bool?
@@ -119,6 +131,14 @@ final class UserManager {
         userCollection.document(userid)
     }
     
+    private func userFavouriteCollection(userId: String) -> CollectionReference {
+        userDocument(userid: userId).collection("favourite_products")
+    }
+    
+    private func userFavouriteProductDocument(userid: String, favouriteProductId: String) -> DocumentReference {
+        userFavouriteCollection(userId: userid).document(favouriteProductId)
+    }
+    
     private let encoder: Firestore.Encoder = {
         let encoder = Firestore.Encoder()
         //encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -213,6 +233,37 @@ final class UserManager {
             DBUser.CodingKeys.preferences.rawValue : nil
         ]
         try await userDocument(userid: userId).updateData(data as [AnyHashable : Any])
+    }
+    
+    func addUserFavouriteProduct(userId: String, productId: Int) async throws {
+        
+        let document = userFavouriteCollection(userId: userId).document()
+        let documentId = document.documentID
+        
+        let data: [String : Any] = [
+            "id" : documentId,
+            "product_id" : productId,
+            "date_created" : Timestamp()
+        ]
+        
+        try await document.setData(data, merge: false)
+    }
+    
+    func removeUserFavouriteProduct(userId: String, favouriteProductId: String) async throws {
+        
+        try await userFavouriteProductDocument(userid: userId, favouriteProductId: favouriteProductId).delete()
+    }
+    
+    func getFavourites(userId: String) async throws -> [Product] {
+        let products = try await userFavouriteCollection(userId: userId).getDocuments(as: FavouriteItem.self)
+        var favourites: [Product] = []
+        
+        for product in products {
+            let item = try await ProductsManager.shared.getProduct(by: product.productId.formatted())
+            favourites.append(item)
+        }
+        
+        return favourites
     }
     
 }

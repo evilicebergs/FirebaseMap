@@ -76,6 +76,13 @@ final class ProductsViewModel: ObservableObject {
         self.getProducts()
     }
     
+    func addUserFavouriteProduct(productId: Int) {
+        Task {
+            let authUser = try AuthenticationManager.shared.getAuthenticatedUser()
+            try? await UserManager.shared.addUserFavouriteProduct(userId: authUser.uid, productId: productId)
+        }
+    }
+    
 //    func getProductsCount() {
 //        Task {
 //            let count = try await ProductsManager.shared.getAllProductCount()
@@ -104,6 +111,11 @@ struct ProductsView: View {
         List {
             ForEach(vm.products) { product in
                 ProductsCellView(product: product)
+                    .contextMenu {
+                        Button("Add To Favoutite") {
+                            vm.addUserFavouriteProduct(productId: product.id)
+                        }
+                    }
                 
                 if product == vm.products.last {
                     HStack {
