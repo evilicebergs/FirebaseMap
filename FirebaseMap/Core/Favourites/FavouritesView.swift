@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 final class FavouritesViewModel: ObservableObject {
     
-    @Published private(set) var products: [Product] = []
+    @Published private(set) var products: [FavouriteItem] = []
     
     func getFavourites() {
         Task {
@@ -19,6 +19,17 @@ final class FavouritesViewModel: ObservableObject {
                 self.products = try await UserManager.shared.getFavourites(userId: authUser.uid)
             } catch {
                 print("ERROR -- \(error)")
+            }
+        }
+    }
+    
+    func deleteFavourite(for productId: String) {
+        Task {
+            do {
+                let authUser = try AuthenticationManager.shared.getAuthenticatedUser()
+                try await UserManager.shared.removeUserFavouriteProduct(userId: authUser.uid, favouriteProductId: productId)
+            } catch {
+                print("Error while deleting: \(error)")
             }
         }
     }
@@ -32,8 +43,16 @@ struct FavouritesView: View {
     var body: some View {
         List {
             ForEach(vm.products) { product in
-                ProductsCellView(product: product)
-                
+                ProductCellViewBuilder(productId: product.productId.formatted())
+                    .swipeActions() {
+                        Button(role: .destructive) {
+                            vm.deleteFavourite(for: product.id)
+                        } label: {
+                            Image(systemName: "trash")
+                            Text("Delete")
+                        }
+
+                    }
                 
             }
         }

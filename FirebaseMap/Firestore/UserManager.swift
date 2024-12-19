@@ -15,7 +15,7 @@ struct Movie: Codable {
     let isPopular: Bool
 }
 
-struct FavouriteItem: Codable {
+struct FavouriteItem: Codable, Identifiable {
     let id: String
     let dateCreated: Date
     let productId: Int
@@ -254,16 +254,10 @@ final class UserManager {
         try await userFavouriteProductDocument(userid: userId, favouriteProductId: favouriteProductId).delete()
     }
     
-    func getFavourites(userId: String) async throws -> [Product] {
+    func getFavourites(userId: String) async throws -> [FavouriteItem] {
         let products = try await userFavouriteCollection(userId: userId).getDocuments(as: FavouriteItem.self)
-        var favourites: [Product] = []
         
-        for product in products {
-            let item = try await ProductsManager.shared.getProduct(by: product.productId.formatted())
-            favourites.append(item)
-        }
-        
-        return favourites
+        return products
     }
     
 }

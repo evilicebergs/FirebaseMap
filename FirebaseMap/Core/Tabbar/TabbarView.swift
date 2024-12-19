@@ -18,15 +18,16 @@ struct TabbarView: View {
                     ProductsView()
                 }
             }
-            Tab("Profile", systemImage: "star.fill") {
-                NavigationStack {
-                    ProfileView(showSignInView: $showSignInView)
-                }
-            }
             
             Tab("Favourites", systemImage: "heart") {
                 NavigationStack {
                     FavouritesView()
+                }
+            }
+            
+            Tab("Profile", systemImage: "star.fill") {
+                NavigationStack {
+                    ProfileView(showSignInView: $showSignInView)
                 }
             }
         }
