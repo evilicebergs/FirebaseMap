@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import Combine
 
 
 struct Movie: Codable {
@@ -145,6 +146,8 @@ final class UserManager {
         return encoder
     }()
     
+    private var userFavouriteListener: ListenerRegistration? = nil
+    
     private let decoder: Firestore.Decoder = {
         let decoder = Firestore.Decoder()
         //decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -155,47 +158,47 @@ final class UserManager {
         try userDocument(userid: user.userId).setData(from: user, merge: true)
     }
     
-//    func createNewUser(auth: AuthDataResultModel) async throws {
-//        var userData: [String : Any] = [
-//            "user_id" : auth.uid,
-//            "is_anonymous" : auth.isAnonymous,
-//            "date_created" : Timestamp(),
-//        ]
-//        if let email = auth.email {
-//            userData["email"] = email
-//        }
-//        if let name = auth.name {
-//            userData["name"] = name
-//        }
-//        if let photoUrl = auth.photoUrl {
-//            userData["photo_url"] = photoUrl
-//        }
-//        try await userDocument(userid: auth.uid).setData(userData, merge: false)
-//    }
+    //    func createNewUser(auth: AuthDataResultModel) async throws {
+    //        var userData: [String : Any] = [
+    //            "user_id" : auth.uid,
+    //            "is_anonymous" : auth.isAnonymous,
+    //            "date_created" : Timestamp(),
+    //        ]
+    //        if let email = auth.email {
+    //            userData["email"] = email
+    //        }
+    //        if let name = auth.name {
+    //            userData["name"] = name
+    //        }
+    //        if let photoUrl = auth.photoUrl {
+    //            userData["photo_url"] = photoUrl
+    //        }
+    //        try await userDocument(userid: auth.uid).setData(userData, merge: false)
+    //    }
     
     func getUser(userId: String) async throws -> DBUser {
         try await userDocument(userid: userId).getDocument(as: DBUser.self)
     }
     
-//    func getUser(by userId: String) async throws -> DBUser {
-//        
-//        let snapshot = try await userDocument(userid: userId).getDocument()
-//        
-//        guard let data = snapshot.data(), let userid = data["user_id"] as? String else {
-//            throw URLError(.badServerResponse)
-//        }
-//        let isAnonymous = data["is_anonymous"] as? Bool
-//        let dateCreated = data["date_created"] as? Date
-//        let email = data["email"] as? String
-//        let photoUrl = data["photo_url"] as? String
-//        let name = data["name"] as? String
-//        
-//        return DBUser(userId: userid, isAnonymous: isAnonymous, dateCreated: dateCreated, email: email, photoUrl: photoUrl, name: name)
-//    }
+    //    func getUser(by userId: String) async throws -> DBUser {
+    //
+    //        let snapshot = try await userDocument(userid: userId).getDocument()
+    //
+    //        guard let data = snapshot.data(), let userid = data["user_id"] as? String else {
+    //            throw URLError(.badServerResponse)
+    //        }
+    //        let isAnonymous = data["is_anonymous"] as? Bool
+    //        let dateCreated = data["date_created"] as? Date
+    //        let email = data["email"] as? String
+    //        let photoUrl = data["photo_url"] as? String
+    //        let name = data["name"] as? String
+    //
+    //        return DBUser(userId: userid, isAnonymous: isAnonymous, dateCreated: dateCreated, email: email, photoUrl: photoUrl, name: name)
+    //    }
     
-//    func updateUserPremiumStatus(user: DBUser) throws {
-//        try userDocument(userid: user.userId).setData(from: user, merge: true)
-//    }
+    //    func updateUserPremiumStatus(user: DBUser) throws {
+    //        try userDocument(userid: user.userId).setData(from: user, merge: true)
+    //    }
     
     func updateUserPremiumStatus(isPremium: Bool, userId: String) async throws {
         let data: [String : Any] = [
@@ -258,6 +261,62 @@ final class UserManager {
         let products = try await userFavouriteCollection(userId: userId).getDocuments(as: FavouriteItem.self)
         
         return products
+    }
+    
+    //this is how to disable listener
+    func removeListenerForFavourites() {
+        self.userFavouriteListener?.remove()
+    }
+    
+    func addListenerForUserFavouriteProduct(userId: String, completion: @escaping (_ products: [FavouriteItem]) -> Void) {
+        self.userFavouriteListener = userFavouriteCollection(userId: userId).addSnapshotListener { querySnapshot, error in
+            guard let documents = querySnapshot?.documents else {
+                print("No Documents")
+                return
+            }
+            
+            let products: [FavouriteItem] = documents.compactMap({ try? $0.data(as: FavouriteItem.self) })
+            
+            completion(products)
+            
+            //add specific actions to some items
+            querySnapshot?.documentChanges.forEach({ diff in
+                if diff.type == .added {
+                    print("New Item: \(diff.document.data())")
+                }
+                if diff.type == .modified {
+                    print("Modified Item: \(diff.document.data())")
+                }
+                if diff.type == .removed {
+                    print("Deleted Item: \(diff.document.data())")
+                }
+            })
+            
+        }
+    }
+    
+//    func addListenerForUserFavouriteProduct(userId: String) -> AnyPublisher<[FavouriteItem], any Error> {
+//        let publisher = PassthroughSubject<[FavouriteItem], Error>()
+//        
+//        self.userFavouriteListener = userFavouriteCollection(userId: userId).addSnapshotListener { querySnapshot, error in
+//            guard let documents = querySnapshot?.documents else {
+//                print("No Documents")
+//                return
+//            }
+//            
+//            let products: [FavouriteItem] = documents.compactMap({ try? $0.data(as: FavouriteItem.self) })
+//            
+//            publisher.send(products)
+//        }
+//        
+//        return publisher.eraseToAnyPublisher()
+//    }
+    
+    func addListenerForUserFavouriteProduct(userId: String) -> AnyPublisher<[FavouriteItem], any Error> {
+        let (publisher, listner) = userFavouriteCollection(userId: userId).addSnapshotListener(as: FavouriteItem.self)
+        self.userFavouriteListener = listner
+        
+        return publisher
     }
     
 }
