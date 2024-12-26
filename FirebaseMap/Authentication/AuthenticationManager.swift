@@ -42,6 +42,21 @@ final class AuthenticationManager {
         return AuthDataResultModel(user: user)
     }
     
+    @discardableResult
+    func reAuthUserWithGoogle(tokens: GoogleSignInResultModel) async throws -> AuthDataResultModel {
+        guard let user = Auth.auth().currentUser else { throw URLError(.badURL) }
+        let credential = GoogleAuthProvider.credential(withIDToken: tokens.idToken, accessToken: tokens.accessToken)
+        
+        return try await AuthDataResultModel(user: user.reauthenticate(with: credential).user)
+    }
+    
+    @discardableResult
+    func reAuthUserWithApple(tokens: SignInWithAppleResult) async throws -> AuthDataResultModel {
+        guard let user = Auth.auth().currentUser else { throw URLError(.badURL) }
+        let credential = OAuthProvider.credential(withProviderID: AuthProviderOption.apple.rawValue, idToken: tokens.token, rawNonce: tokens.nonce)
+        return try await AuthDataResultModel(user: user.reauthenticate(with: credential).user)
+    }
+    
     func signOut() throws {
         try Auth.auth().signOut()
     }
