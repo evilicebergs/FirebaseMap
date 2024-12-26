@@ -17,6 +17,10 @@ final class ReAuthViewModel: ObservableObject {
         try await AuthenticationManager.shared.reAuthUserWithGoogle(tokens: tokens)
     }
     
+    func reauthEmail(email: String, password: String) async throws {
+        try await AuthenticationManager.shared.signInUser(email: email, password: password)
+    }
+    
 //    func signInApple() async throws {
 //        let helper = await SignInAppleHelper()
 //        let tokens = try await helper.startSignInWithAppleFlow()
@@ -36,47 +40,80 @@ struct ReauthView: View {
     @Binding var showReauthView: Bool
     @Binding var isReauthenticated: Bool
     
+    @State private var showAlertEmail: Bool = false
+    
+    @State private var textPass: String = ""
+    @State private var textEmail: String = ""
+    
+    let providers: [AuthProviderOption]
+    
     var body: some View {
         VStack {
-//            NavigationLink {
-//                //SignInEmailView(showSignInView: $showSignInView)
-//            } label: {
-//                Text("Sign In With Email")
-//                    .font(.headline)
-//                    .foregroundStyle(.white)
-//                    .frame(height: 55)
-//                    .frame(maxWidth: .infinity)
-//                    .background(.blue)
-//                    .clipShape(.rect(cornerRadius: 10))
-//            }
-            
-            GoogleSignInButton(viewModel: GoogleSignInButtonViewModel(scheme: .dark, style: .wide, state: .normal)) {
-                Task {
-                    do {
-                        try await vm.reAuthGoogle()
-                        isReauthenticated = true
-                        showReauthView = false
-                    } catch {
-                        print(error)
+            Text("Choose Your Provider")
+                .font(.title2)
+            if providers.contains(.email) {
+                Button {
+                    showAlertEmail = true
+                } label: {
+                    Text("Reauthenticate With Email")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(height: 55)
+                        .frame(maxWidth: .infinity)
+                        .background(.blue)
+                        .clipShape(.rect(cornerRadius: 10))
+                }
+                .alert("Enter Your Email and Password", isPresented: $showAlertEmail) {
+                    TextField("Email...", text: $textEmail)
+                        .keyboardType(.emailAddress)
+                    TextField("Password...", text: $textPass)
+                        .textContentType(.password)
+                    Button("Verify") {
+                        Task {
+                            try? await vm.reauthEmail(email: textEmail, password: textPass)
+                            textPass = ""
+                            textEmail = ""
+                            isReauthenticated = true
+                            showReauthView = false
+                        }
+                    }
+                    
+                    Button(role: .cancel) { } label: {
+                        Text("Cancel")
                     }
                 }
             }
             
-//            Button(action: {
-//                Task {
-//                    do {
-//                        //try await vm.signInApple()
-//                        //showSignInView = false
-//                    } catch {
-//                        print(error)
-//                    }
-//                }
-//            }, label: {
-//                SignInWithAppleButtonViewRepresentable(type: .default, style: colorScheme == .dark ? .white : .black)
-//                    .allowsHitTesting(false)
-//            })
-//            .frame(height: 55)
+            if providers.contains(.google) {
+                GoogleSignInButton(viewModel: GoogleSignInButtonViewModel(scheme: .dark, style: .wide, state: .normal)) {
+                    Task {
+                        do {
+                            try await vm.reAuthGoogle()
+                            isReauthenticated = true
+                            showReauthView = false
+                        } catch {
+                            print(error)
+                        }
+                    }
+                }
+            }
             
+            if providers.contains(.apple) {
+                //            Button(action: {
+                //                Task {
+                //                    do {
+                //                        //try await vm.signInApple()
+                //                        //showSignInView = false
+                //                    } catch {
+                //                        print(error)
+                //                    }
+                //                }
+                //            }, label: {
+                //                SignInWithAppleButtonViewRepresentable(type: .default, style: colorScheme == .dark ? .white : .black)
+                //                    .allowsHitTesting(false)
+                //            })
+                //            .frame(height: 55)
+            }
             Spacer()
         }
         .padding()
@@ -86,6 +123,6 @@ struct ReauthView: View {
 
 #Preview {
     NavigationStack {
-        ReauthView(showReauthView: .constant(false), isReauthenticated: .constant(false))
+        ReauthView(showReauthView: .constant(false), isReauthenticated: .constant(false), providers: [.google])
     }
 }

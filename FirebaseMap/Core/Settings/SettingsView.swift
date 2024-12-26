@@ -13,7 +13,7 @@ struct SettingsView: View {
     
     @Binding var showSignInView: Bool
     
-    @State private var showAlertToLogOut: Bool = false
+    @State private var showAlert: Bool = false
     @State var showReauthView: Bool = false
     
     @State var isReauthenticated: Bool = false
@@ -26,7 +26,7 @@ struct SettingsView: View {
                         try vm.logOut()
                         showSignInView = true
                     } else {
-                        showAlertToLogOut = true
+                        showAlert = true
                     }
                 } catch {
                     print(error)
@@ -34,7 +34,7 @@ struct SettingsView: View {
             } label: {
                 Text("Log Out")
             }
-            .alert("You should reauthenticate your account to log out", isPresented: $showAlertToLogOut) {
+            .alert("You should reauthenticate your account", isPresented: $showAlert) {
                     Button(role: .cancel) { } label: {
                         Text("Cancel")
                     }
@@ -46,8 +46,8 @@ struct SettingsView: View {
                     }
 
             }
-            .sheet(isPresented: $showReauthView) {
-                ReauthView(showReauthView: $showReauthView, isReauthenticated: $isReauthenticated)
+            .fullScreenCover(isPresented: $showReauthView) {
+                ReauthView(showReauthView: $showReauthView, isReauthenticated: $isReauthenticated, providers: vm.authProviders)
             }
             
             Button(role: .destructive, action: {
@@ -57,7 +57,7 @@ struct SettingsView: View {
                             try await vm.deleteUserAccount()
                             showSignInView = true
                         } else {
-                            showReauthView = true
+                            showAlert = true
                         }
                     } catch {
                         print(error)
@@ -66,17 +66,6 @@ struct SettingsView: View {
             }, label: {
                 Text("Delete Account")
             })
-            .alert("You should reauthenticate your account to log out", isPresented: $showAlertToLogOut) {
-                Button(role: .cancel) { } label: {
-                    Text("Cancel")
-                }
-                
-                Button {
-                    showReauthView = true
-                } label: {
-                    Text("Reauthenticate")
-                }
-            }
             
             if vm.authProviders.contains(.email) {
                 emailSection
