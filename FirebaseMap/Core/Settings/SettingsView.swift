@@ -34,17 +34,27 @@ struct SettingsView: View {
             } label: {
                 Text("Log Out")
             }
-            .alert("You should reauthenticate your account", isPresented: $showAlert) {
-                    Button(role: .cancel) { } label: {
-                        Text("Cancel")
+            .alert(vm.authUser?.isAnonymous ?? true ? "You will lose your account data. To avoid accidental deletion link your account to provider." : "You should reauthenticate your account", isPresented: $showAlert) {
+                if vm.authUser?.isAnonymous == true {
+                    Button {
+                        Task {
+                            try? await vm.deleteUserAccount()
+                            showSignInView = true
+                        }
+                    } label: {
+                        Text("Delete anyway")
                     }
-                    
+                } else {
                     Button {
                         showReauthView = true
                     } label: {
                         Text("Reauthenticate")
                     }
-
+                }
+                
+                Button(role: .cancel) { } label: {
+                    Text("Cancel")
+                }
             }
             .fullScreenCover(isPresented: $showReauthView) {
                 ReauthView(showReauthView: $showReauthView, isReauthenticated: $isReauthenticated, providers: vm.authProviders)

@@ -21,13 +21,11 @@ final class ReAuthViewModel: ObservableObject {
         try await AuthenticationManager.shared.signInUser(email: email, password: password)
     }
     
-//    func signInApple() async throws {
-//        let helper = await SignInAppleHelper()
-//        let tokens = try await helper.startSignInWithAppleFlow()
-//        let authDataResult = try await AuthenticationManager.shared.signInWithApple(tokens: tokens)
-//        let user = DBUser(auth: authDataResult)
-//        try await UserManager.shared.createNewUser(user: user)
-//    }
+    func reAuthApple() async throws {
+        let helper = await SignInAppleHelper()
+        let tokens = try await helper.startSignInWithAppleFlow()
+        try await AuthenticationManager.shared.reAuthUserWithApple(tokens: tokens)
+    }
     
 }
 
@@ -99,20 +97,21 @@ struct ReauthView: View {
             }
             
             if providers.contains(.apple) {
-                //            Button(action: {
-                //                Task {
-                //                    do {
-                //                        //try await vm.signInApple()
-                //                        //showSignInView = false
-                //                    } catch {
-                //                        print(error)
-                //                    }
-                //                }
-                //            }, label: {
-                //                SignInWithAppleButtonViewRepresentable(type: .default, style: colorScheme == .dark ? .white : .black)
-                //                    .allowsHitTesting(false)
-                //            })
-                //            .frame(height: 55)
+                Button(action: {
+                    Task {
+                        do {
+                            try await vm.reAuthApple()
+                            isReauthenticated = true
+                            showReauthView = false
+                        } catch {
+                            print(error)
+                        }
+                    }
+                }, label: {
+                    SignInWithAppleButtonViewRepresentable(type: .default, style: colorScheme == .dark ? .white : .black)
+                        .allowsHitTesting(false)
+                })
+                .frame(height: 55)
             }
             Spacer()
         }
