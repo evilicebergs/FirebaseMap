@@ -158,6 +158,14 @@ final class UserManager {
         try userDocument(userid: user.userId).setData(from: user, merge: true)
     }
     
+    func userExists(userId: String) async throws -> Bool {
+        try await userDocument(userid: userId).getDocument().exists
+    }
+    
+    func deleteUser(userId: String) async throws {
+        try await userDocument(userid: userId).delete()
+    }
+    
     //    func createNewUser(auth: AuthDataResultModel) async throws {
     //        var userData: [String : Any] = [
     //            "user_id" : auth.uid,

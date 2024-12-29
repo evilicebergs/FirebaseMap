@@ -70,6 +70,9 @@ final class SettingsViewModel: ObservableObject {
     }
     
     func deleteUserAccount() async throws {
+        let authDataResult = try AuthenticationManager.shared.getAuthenticatedUser()
+        try await UserManager.shared.deleteUser(userId: authDataResult.uid)
+        
         try await AuthenticationManager.shared.deleteAccount()
     }
     
