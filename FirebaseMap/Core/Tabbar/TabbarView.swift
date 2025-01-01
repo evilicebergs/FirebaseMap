@@ -11,21 +11,23 @@ struct TabbarView: View {
     
     @Binding var showSignInView: Bool
     
+    @State var selectedTab: Int = 0
+    
     var body: some View {
-        TabView {
-            Tab("Products", systemImage: "cart") {
+        TabView(selection: $selectedTab) {
+            Tab("Products", systemImage: "cart", value: 0) {
                 NavigationStack {
                     ProductsView()
                 }
             }
             
-            Tab("Favourites", systemImage: "heart") {
+            Tab("Favourites", systemImage: "heart", value: 1) {
                 NavigationStack {
-                    FavouritesView()
+                    FavouritesView(selectedTab: $selectedTab)
                 }
             }
             
-            Tab("Profile", systemImage: "star.fill") {
+            Tab("Profile", systemImage: "star.fill", value: 2) {
                 NavigationStack {
                     ProfileView(showSignInView: $showSignInView)
                 }
