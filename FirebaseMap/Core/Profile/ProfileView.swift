@@ -69,6 +69,30 @@ struct ProfileView: View {
                 PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                     Text("Select a  photo")
                 }
+                
+                if let data = vm.user?.profileImageUrl, let url = URL(string: data) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 150)
+                            .clipShape(.rect(cornerRadius: 10))
+                        
+                    } placeholder: {
+                        ProductsView()
+                            .frame(width: 150)
+                    }
+                }
+                
+                if vm.user?.profileImagePath != nil {
+                    Button("Delete image") {
+                        Task {
+                            try await vm.deleteProfileImage()
+                        }
+                        
+                    }
+                }
+                
             }
         }
         .onChange(of: selectedItem, { oldValue, newValue in

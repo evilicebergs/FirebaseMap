@@ -67,9 +67,20 @@ final class ProfileViewModel: ObservableObject {
             guard let data = try await item.loadTransferable(type: Data.self), let userId = user?.userId else { return }
             
             let (path, _) = try await StorageManager.shared.saveImage(data: data, userId: userId)
+            let url = try await StorageManager.shared.getUrlForImage(path: path)
+            try await UserManager.shared.updateUserProfileImage(userId: userId, url: url.absoluteString, path: path)
+            
             print("Success! \(path)")
             
         }
+    }
+    
+    func deleteProfileImage() async throws {
+        
+        guard let user, let path = user.profileImagePath else { return }
+        
+        try await StorageManager.shared.deleteImage(path: path)
+        try await UserManager.shared.updateUserProfileImage(userId: user.userId, url: nil, path: nil)
     }
     
 }
