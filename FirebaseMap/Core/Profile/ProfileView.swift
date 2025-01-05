@@ -14,6 +14,8 @@ struct ProfileView: View {
     @Binding var showSignInView: Bool
     @State private var selectedItem: PhotosPickerItem? = nil
     
+    @State private var selectedPhoto: UIImage? = nil
+    
     let preferenceOptions: [String] = ["Sports", "Movies", "Books"]
     
     private func preferenceIsSelected(option: String) -> Bool {
@@ -23,6 +25,15 @@ struct ProfileView: View {
     var body: some View {
         List {
             if let user = vm.user {
+                
+                if let photo = selectedPhoto {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(.rect(cornerRadius: 10))
+                        .padding()
+                }
+                
                 Text("UserId: \(user.userId)")
                 Text("\(user.name ?? "No name")")
                 if let isAnonymous = user.isAnonymous {
@@ -97,12 +108,17 @@ struct ProfileView: View {
         }
         .onChange(of: selectedItem, { oldValue, newValue in
             if let newValue {
-                vm.saveProfileImage(item: newValue)
+                Task {
+                    vm.saveProfileImage(item: newValue)
+                    try await vm.saveImageToFileManager(item: newValue)
+                    selectedPhoto = try? await vm.displayPhoto(item: newValue)
+                }
             }
         })
         .onAppear {
             Task {
                 try? await vm.loadCurrentUser()
+                selectedPhoto = vm.loadImage()
             }
         }
         .navigationTitle("Profile")

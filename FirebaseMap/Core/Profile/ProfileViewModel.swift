@@ -14,6 +14,8 @@ final class ProfileViewModel: ObservableObject {
     
     @Published private(set) var user: DBUser? = nil
     
+    private let savePath = FileManager.documentsDirectory.appending(path: "SavedImage")
+    
     func loadCurrentUser() async throws {
         let authDataResult = try AuthenticationManager.shared.getAuthenticatedUser()
         self.user = try await UserManager.shared.getUser(userId: authDataResult.uid)
@@ -63,7 +65,7 @@ final class ProfileViewModel: ObservableObject {
     
     func saveProfileImage(item: PhotosPickerItem) {
         Task {
-            
+
             guard let data = try await item.loadTransferable(type: Data.self), let userId = user?.userId else { return }
             
             let (path, _) = try await StorageManager.shared.saveImage(data: data, userId: userId)
@@ -75,6 +77,35 @@ final class ProfileViewModel: ObservableObject {
         }
     }
     
+    func saveImageToFileManager(item: PhotosPickerItem) async throws {
+        
+        guard let data = try await item.loadTransferable(type: Data.self) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        try data.write(to: savePath)
+    }
+    
+    func loadImage() -> UIImage? {
+        do {
+            
+            let data = try Data(contentsOf: savePath)
+            
+            return UIImage(data: data)
+            
+        } catch {
+            print("No Image in the directory")
+            return nil
+        }
+    }
+    
+    func displayPhoto(item: PhotosPickerItem) async throws -> UIImage? {
+        guard let data = try await item.loadTransferable(type: Data.self) else {
+            throw URLError(.badServerResponse)
+        }
+        return UIImage(data: data)
+    }
+ 
     func deleteProfileImage() async throws {
         
         guard let user, let path = user.profileImagePath else { return }
