@@ -27,12 +27,14 @@ struct FavouritesView: View {
                 Button {
                     selectedTab = 0
                 } label: {
-                    RoundedRectangle(cornerRadius: 10).stroke(.blue, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(.blue, lineWidth: 3)
                         .frame(width: 180, height: 55)
                         .overlay {
                             Text("Go To Products")
                                 .padding()
                         }
+                        .shadow(color: .black, radius: 2)
                 }
                 Spacer()
             }
