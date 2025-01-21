@@ -15,6 +15,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         print("Success")
         return true
     }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        
+    }
+    
+    func applicationWillResignActive(_ application: UIApplication) {
+        
+    }
+    
 }
 
 @main
