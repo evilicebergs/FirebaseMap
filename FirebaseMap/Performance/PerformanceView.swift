@@ -80,7 +80,7 @@ struct PerformanceView: View {
         metric.start()
         Task {
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
+                let (_, response) = try await URLSession.shared.data(from: url)
                 if let response = response as? HTTPURLResponse {
                     metric.responseCode = response.statusCode
                 }

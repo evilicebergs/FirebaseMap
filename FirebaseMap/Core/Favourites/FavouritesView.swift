@@ -34,7 +34,6 @@ struct FavouritesView: View {
                             Text("Go To Products")
                                 .padding()
                         }
-                        .shadow(color: .black, radius: 2)
                 }
                 Spacer()
             }

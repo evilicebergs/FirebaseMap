@@ -33,7 +33,8 @@ struct FirebaseMapApp: App {
     
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AnalyticsView()
+            //RootView()
         }
     }
 }
