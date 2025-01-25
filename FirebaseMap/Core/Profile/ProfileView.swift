@@ -117,8 +117,16 @@ struct ProfileView: View {
         })
         .onAppear {
             Task {
-                try? await vm.loadCurrentUser()
-                selectedPhoto = vm.loadImage()
+                do {
+                    try await vm.loadCurrentUser()
+                    selectedPhoto = vm.loadImage()
+                    if let user = vm.user {
+                        CrashManager.shared.setUserId(userId: user.userId)
+                        CrashManager.shared.setIsPremiumValue(isPremium: user.isPremium ?? false)
+                    }
+                } catch {
+                    CrashManager.shared.sendNonFatal(error: error)
+                }
             }
         }
         .navigationTitle("Profile")

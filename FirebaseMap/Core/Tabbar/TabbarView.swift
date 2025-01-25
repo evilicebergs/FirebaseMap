@@ -33,6 +33,12 @@ struct TabbarView: View {
                 }
             }
         }
+        .onAppear {
+            PerformanceManager.shared.startTrace(name: "main_screen_time")
+        }
+        .onDisappear {
+            PerformanceManager.shared.stopTrace(name: "main_screen_time")
+        }
     }
 }
 

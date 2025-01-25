@@ -46,12 +46,12 @@ struct CrashView: View {
                     
                     let myString: String? = nil
                     
-                    guard let myString else {
-                        CrashManager.shared.sendNonFatal(error: URLError(.dataNotAllowed))
-                        return
-                    }
+//                    guard let myString else {
+//                        CrashManager.shared.sendNonFatal(error: URLError(.dataNotAllowed))
+//                        return
+//                    }
                     
-                    let string2 = myString
+                    //let string2 = myString
                 } label: {
                     Text("Click Me 1")
                         .foregroundStyle(.black)
@@ -77,8 +77,8 @@ struct CrashView: View {
                 Button {
                     CrashManager.shared.addLog(messsage: "button3 clicked")
                     
-                    let array: [String] = []
-                    let item = array[0]
+//                    let array: [String] = []
+//                    let item = array[0]
                 } label: {
                     Text("Click Me 3")
                         .foregroundStyle(.black)

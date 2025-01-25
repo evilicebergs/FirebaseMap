@@ -58,12 +58,19 @@ final class ProductsViewModel: ObservableObject {
     }
     
     func getProducts() {
+        PerformanceManager.shared.startTrace(name: "get_products")
+        
         Task {
+            PerformanceManager.shared.setValueForTrace(value: "start downloading", traceName: "get_products", forAttribute: "func_speed")
             let (newProducts, newDocument) = try await ProductsManager.shared.getAllProducts(descending: selectedFilter.priceDescending, category: selectedCategory?.rawValue, count: 10, lastDocument: lastDocument)
+            PerformanceManager.shared.setValueForTrace(value: "end downloading", traceName: "get_products", forAttribute: "func_speed")
             if let newDocument {
                 self.lastDocument = newDocument
             }
             self.products.append(contentsOf: newProducts)
+            PerformanceManager.shared.setValueForTrace(value: "append to array", traceName: "get_products", forAttribute: "func_speed")
+            
+            PerformanceManager.shared.stopTrace(name: "get_products")
         }
     }
     

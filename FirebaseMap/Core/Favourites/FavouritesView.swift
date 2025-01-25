@@ -25,6 +25,7 @@ struct FavouritesView: View {
                     .imageScale(.large)
                     .padding(.bottom)
                 Button {
+                    AnalyticsManager.shared.logEvent(name: "favourites_button_clicked")
                     selectedTab = 0
                 } label: {
                     RoundedRectangle(cornerRadius: 10)
@@ -55,7 +56,11 @@ struct FavouritesView: View {
         }
         .navigationTitle("Favourites")
         .onFirstAppear {
+            AnalyticsManager.shared.logEvent(name: "favoutites_view_appeared")
             vm.addListener()
+        }
+        .onDisappear {
+            AnalyticsManager.shared.logEvent(name: "favoutites_view_dissappeared")
         }
     }
 }
